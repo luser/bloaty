@@ -182,7 +182,15 @@ std::string ItaniumDemangle(string_view symbol, DataSource source) {
     char demangled[1024];
     if (absl::debugging_internal::Demangle(demangle_from.data(), demangled,
                                            sizeof(demangled))) {
-      return std::string(demangled);
+      std::string res(demangled);
+      if (res.length() > 19 && res.compare(res.length() - 19, 3, "::h") == 0) {
+        auto suffix = res.substr(res.length() - 16);
+        if (std::all_of(suffix.begin(), suffix.end(),
+                        [](char c) { return isxdigit(c); })) {
+          return res.substr(0, res.length() - 19);
+        }
+      }
+      return res;
     } else {
       return std::string(symbol);
     }
